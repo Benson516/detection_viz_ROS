@@ -68,7 +68,7 @@ class Node:
         #     box_list.markers.append(self.create_polygon(message.header, message.objects[i].cPoint, idx))
         #     idx += 1
         #
-        box_list.markers.append(self.create_polygon_list(message.header, [_obj.cPoint for _obj in message.objects], 1))
+        box_list.markers.append(self.create_polygon_list(message.header, message.objects, 1))
         delay_list.markers.append( self.create_delay_text_marker( 1, message.header, current_stamp, self.text_marker_position_origin(), self.fps_cal.fps ) )
         #
         self.polygon_pub.publish(box_list)
@@ -100,7 +100,7 @@ class Node:
 
         return marker
 
-    def create_polygon_list(self, header, cPoint_list, idx):
+    def create_polygon_list(self, header, objects, idx):
         marker = Marker()
         marker.header.frame_id = header.frame_id
         marker.header.stamp = header.stamp
@@ -118,7 +118,8 @@ class Node:
         marker.color.a = 1.0
 
         marker.points = []
-        for cPoint in cPoint_list:
+        for _i in range(len(objects)):
+            cPoint = objects[_i].cPoint
             if len(cPoint.lowerAreaPoints) > 0:
                 for i in range(len(cPoint.lowerAreaPoints)-1):
                     marker.points.append(cPoint.lowerAreaPoints[i])

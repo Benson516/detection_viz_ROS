@@ -83,7 +83,7 @@ class Node:
         #     box_list.markers.append( self.create_bounding_box_marker( idx, message.header, message.objects[i].bPoint) )
         #     # delay_list.markers.append( self.create_delay_text_marker( idx, message.header, point) )
         #     idx += 1
-        box_list.markers.append(self.create_bounding_box_list_marker(1, message.header, [_obj.bPoint for _obj in message.objects ] ) )
+        box_list.markers.append(self.create_bounding_box_list_marker(1, message.header, message.objects ) )
         #
         delay_list.markers.append( self.create_delay_text_marker( 1, message.header, current_stamp, self.text_marker_position_origin(), self.fps_cal.fps ) )
         #
@@ -128,7 +128,7 @@ class Node:
 
         return marker
 
-    def create_bounding_box_list_marker(self, idx, header, bbox_list):
+    def create_bounding_box_list_marker(self, idx, header, objects):
         marker = Marker()
         marker.header.frame_id = header.frame_id
         marker.header.stamp = header.stamp
@@ -144,7 +144,9 @@ class Node:
         marker.color.b = self.c_blue
         marker.color.a = 1.0
 
-        for bbox in bbox_list:
+
+        for _i in range(len(objects)):
+            bbox = objects[_i].bPoint
             point_list = [
                 bbox.p0,
                 bbox.p1,
