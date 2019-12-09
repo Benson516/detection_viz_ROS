@@ -75,30 +75,30 @@ class Node:
         self.delay_txt_mark_pub.publish(delay_list)
 
 
-    def create_polygon(self, header, cPoint, idx):
-        marker = Marker()
-        marker.header.frame_id = header.frame_id
-        marker.header.stamp = header.stamp
-        marker.ns = self.inputTopic
-        marker.action = Marker.ADD
-        marker.pose.orientation.w = 1.0
-
-        marker.id = idx
-        marker.type = Marker.LINE_STRIP
-        marker.scale.x = 0.1
-        marker.lifetime = rospy.Duration(1.0)
-        marker.color.r = self.c_red
-        marker.color.g = self.c_green
-        marker.color.b = self.c_blue
-        marker.color.a = 1.0
-
-        marker.points = []
-        if len(cPoint.lowerAreaPoints) > 0:
-            for i in range(len(cPoint.lowerAreaPoints)):
-                marker.points.append(cPoint.lowerAreaPoints[i])
-            marker.points.append(cPoint.lowerAreaPoints[0])
-
-        return marker
+    # def create_polygon(self, header, cPoint, idx):
+    #     marker = Marker()
+    #     marker.header.frame_id = header.frame_id
+    #     marker.header.stamp = header.stamp
+    #     marker.ns = self.inputTopic
+    #     marker.action = Marker.ADD
+    #     marker.pose.orientation.w = 1.0
+    #
+    #     marker.id = idx
+    #     marker.type = Marker.LINE_STRIP
+    #     marker.scale.x = 0.1
+    #     marker.lifetime = rospy.Duration(1.0)
+    #     marker.color.r = self.c_red
+    #     marker.color.g = self.c_green
+    #     marker.color.b = self.c_blue
+    #     marker.color.a = 1.0
+    #
+    #     marker.points = []
+    #     if len(cPoint.lowerAreaPoints) > 0:
+    #         for i in range(len(cPoint.lowerAreaPoints)):
+    #             marker.points.append(cPoint.lowerAreaPoints[i])
+    #         marker.points.append(cPoint.lowerAreaPoints[0])
+    #
+    #     return marker
 
     def create_polygon_list(self, header, objects, idx):
         marker = Marker()
