@@ -1,7 +1,9 @@
 #!/usr/bin/env python2
 
 import rospy
-
+from std_msgs.msg import (
+    Bool,
+)
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
@@ -33,14 +35,20 @@ class Node:
 
         # self.clock_sub = rospy.Subscriber("/clock", Clock, self.clock_CB)
         self.detection_sub = rospy.Subscriber(self.inputTopic, DetectedObjectArray, self.detection_callback)
+        self.is_showing_depth_sub = rospy.Subscriber("/d_viz/req_show_depth", Bool, self.req_show_depth_CB)
         # FPS
         self.fps_cal = FPS.FPS()
+        # Depth
+        self.is_showing_depth = True
 
     def run(self):
         rospy.spin()
 
     def clock_CB(self, msg):
         self.t_clock = msg.clock
+
+    def req_show_depth_CB(self, msg):
+        self.is_showing_depth = msg.data
 
     def text_marker_position(self, cPoint):
         point_1 = cPoint.lowerAreaPoints[0]
@@ -92,10 +100,11 @@ class Node:
         #     # point = self.text_marker_position(message.objects[i].cPoint)
         #     box_list.markers.append(self.create_polygon(message.header, message.objects[i].cPoint, idx))
         #     idx += 1
-        idx = 2
-        for i in range(len(message.objects)):
-            box_list.markers.append( self.create_depth_text_marker( idx, message.header, message.objects[i].cPoint, i) )
-            idx += 1
+        if self.is_showing_depth:
+            idx = 2
+            for i in range(len(message.objects)):
+                box_list.markers.append( self.create_depth_text_marker( idx, message.header, message.objects[i].cPoint, i) )
+                idx += 1
         #
         self.polygon_pub.publish(box_list)
         self.delay_txt_mark_pub.publish(delay_list)
