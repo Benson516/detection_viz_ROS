@@ -11,6 +11,7 @@ from std_msgs.msg import Header
 from msgs.msg import *
 from rosgraph_msgs.msg import Clock
 #
+import numpy as np
 import fps_calculator as FPS
 
 class Node:
@@ -44,9 +45,9 @@ class Node:
     def text_marker_position(self, cPoint):
         point_1 = cPoint.lowerAreaPoints[0]
         p = Point()
-        p.x = point_1.x
+        p.x = point_1.x + 1.0 # + 2.0
         p.y = point_1.y
-        p.z = point_1.z + 2.0
+        p.z = point_1.z
         return p
 
     def text_marker_position_origin(self):
@@ -56,20 +57,45 @@ class Node:
         p.z = 2.0
         return p
 
+    def _calculate_depth_polygon(self, cPoint):
+        """
+        The depth of a cPoint is simply the x value of closest point.
+        """
+        min_d = float('inf')
+        for _i in range(len( cPoint.lowerAreaPoints )):
+            if abs(cPoint.lowerAreaPoints[_i].x) < min_d:
+                min_d = abs(cPoint.lowerAreaPoints[_i].x)
+        return min_d
+
+    def _calculate_distance_polygon(self, cPoint):
+        """
+        The distance of a cPoint is the Euclidean distance between origin and the closest point.
+        """
+        min_d = float('inf')
+        for _i in range(len( cPoint.lowerAreaPoints )):
+            distance = np.linalg.norm( np.array((cPoint.lowerAreaPoints[_i].x, cPoint.lowerAreaPoints[_i].y)) )
+            if distance < min_d:
+                min_d = distance
+        return min_d
+
     def detection_callback(self, message):
         current_stamp = rospy.get_rostime()
         self.fps_cal.step()
         # print("fps = %f" % self.fps_cal.fps)
         box_list = MarkerArray()
         delay_list = MarkerArray()
+
+        box_list.markers.append(self.create_polygon_list(message.header, message.objects, 1))
+        delay_list.markers.append( self.create_delay_text_marker( 1, message.header, current_stamp, self.text_marker_position_origin(), self.fps_cal.fps ) )
         # idx = 1
         # for i in range(len(message.objects)):
         #     # point = self.text_marker_position(message.objects[i].cPoint)
         #     box_list.markers.append(self.create_polygon(message.header, message.objects[i].cPoint, idx))
         #     idx += 1
-        #
-        box_list.markers.append(self.create_polygon_list(message.header, message.objects, 1))
-        delay_list.markers.append( self.create_delay_text_marker( 1, message.header, current_stamp, self.text_marker_position_origin(), self.fps_cal.fps ) )
+        idx = 2
+        for i in range(len(message.objects)):
+            box_list.markers.append( self.create_depth_text_marker( idx, message.header, message.objects[i].cPoint, i) )
+            idx += 1
         #
         self.polygon_pub.publish(box_list)
         self.delay_txt_mark_pub.publish(delay_list)
@@ -121,11 +147,16 @@ class Node:
         for _i in range(len(objects)):
             cPoint = objects[_i].cPoint
             if len(cPoint.lowerAreaPoints) > 0:
-                for i in range(len(cPoint.lowerAreaPoints)-1):
+                # for i in range(len(cPoint.lowerAreaPoints)-1):
+                #     marker.points.append(cPoint.lowerAreaPoints[i])
+                #     marker.points.append(cPoint.lowerAreaPoints[i+1])
+                # marker.points.append(cPoint.lowerAreaPoints[-1])
+                # marker.points.append(cPoint.lowerAreaPoints[0])
+                _point_pre = cPoint.lowerAreaPoints[-1]
+                for i in range(len(cPoint.lowerAreaPoints)):
+                    marker.points.append(_point_pre)
                     marker.points.append(cPoint.lowerAreaPoints[i])
-                    marker.points.append(cPoint.lowerAreaPoints[i+1])
-                marker.points.append(cPoint.lowerAreaPoints[-1])
-                marker.points.append(cPoint.lowerAreaPoints[0])
+                    _point_pre = cPoint.lowerAreaPoints[i]
 
         return marker
 
@@ -143,6 +174,21 @@ class Node:
             text += " fps = %.1f" % fps
         #
         return self.text_marker_prototype(idx, header, text, point=point, ns=(self.inputTopic + "_d"), scale=2.0 )
+
+    def create_depth_text_marker(self, idx, header, cPoint, cPoint_id=None):
+        """
+        Generate a text marker for showing latency and FPS.
+        """
+        point = self.text_marker_position( cPoint )
+        depth = self._calculate_depth_polygon( cPoint )
+        # depth = self._calculate_distance_polygon( cPoint )
+        # Generate text
+        if cPoint_id is None:
+            text = "D=%.2fm" % ( depth )
+        else:
+            text = "[%d]D=%.2fm" % (cPoint_id, depth )
+        scale = 1.0
+        return self.text_marker_prototype(idx, header, text, point=point, ns=(self.inputTopic + "_depth"), scale=scale )
 
 
     def text_marker_prototype(self, idx, header, text, point=Point(), ns="T", scale=2.0):
