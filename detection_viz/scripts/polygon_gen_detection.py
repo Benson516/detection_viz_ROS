@@ -130,29 +130,41 @@ class Node:
         return marker
 
     def create_delay_text_marker(self, idx, header, current_stamp, point, fps=None):
+        """
+        Generate a text marker for showing latency and FPS.
+        """
+        # Generate text
+        if len(str(self.delay_prefix)) > 0:
+            text = "[%s] " % str(self.delay_prefix)
+        else:
+            text = ""
+        text += "%.3fms" % ((current_stamp - header.stamp).to_sec() * 1000.0)
+        if not fps is None:
+            text += " fps = %.1f" % fps
+        #
+        return self.text_marker_prototype(idx, header, text, point=point, ns=(self.inputTopic + "_d"), scale=2.0 )
+
+
+    def text_marker_prototype(self, idx, header, text, point=Point(), ns="T", scale=2.0):
+        """
+        Generate the prototype of text
+        """
         marker = Marker()
         marker.header.frame_id = header.frame_id
         marker.header.stamp = header.stamp
-        marker.ns = self.inputTopic + "_d"
+        marker.ns = ns
         marker.action = Marker.ADD
         marker.id = idx
         marker.type = Marker.TEXT_VIEW_FACING
         # marker.scale.x = 10.0
         # marker.scale.y = 1.0
-        marker.scale.z = 2.0
+        marker.scale.z = scale
         marker.lifetime = rospy.Duration(1.0)
         marker.color.r = self.c_red
         marker.color.g = self.c_green
         marker.color.b = self.c_blue
         marker.color.a = 1.0
-        # marker.text = "%.3fms" % ((rospy.get_rostime() - header.stamp).to_sec() * 1000.0)
-        if len(str(self.delay_prefix)) > 0:
-            marker.text = "[%s] " % str(self.delay_prefix)
-        else:
-            marker.text = ""
-        marker.text += "%.3fms" % ((current_stamp - header.stamp).to_sec() * 1000.0)
-        if not fps is None:
-            marker.text += " fps = %.1f" % fps
+        marker.text = text
 
         marker.pose.position.x = point.x
         marker.pose.position.y = point.y
@@ -161,9 +173,7 @@ class Node:
         marker.pose.orientation.y = 0.0
         marker.pose.orientation.z = 0.0
         marker.pose.orientation.w = 1.0
-
         return marker
-
 
 
 if __name__ == "__main__":
